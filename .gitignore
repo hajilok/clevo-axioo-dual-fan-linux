@@ -1,0 +1,14 @@
+# Build artifacts
+obj/
+bin/
+
+# Eclipse project files (dari fork upstream, tidak dipakai)
+.cproject
+.project
+.settings/
+
+# Editor / OS
+*.swp
+*.swo
+*~
+.DS_Store
