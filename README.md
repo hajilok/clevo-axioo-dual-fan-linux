@@ -21,7 +21,7 @@ second fan (GPU) never spins up under manual/auto control — see upstream
 
 ## Daftar Isi (untuk pengguna Indonesia)
 - [Kenapa fan GPU saya tidak nyala?](#kenapa-fan-gpu-tidak-nyala)
-- [Cara install](#build-and-install)
+- [Cara install](#build-and-install) ← termasuk symlink ayatana-appindicator untuk distro baru
 - [Cara pakai](#command-line-usage)
 - [Bikin persistent (jalan terus / autostart)](#autostart-dengan-systemd)
 - [Troubleshooting](#troubleshooting)
@@ -63,8 +63,57 @@ cross-checked against the official TUXEDO `tuxedo-fan-control` native helper
 Build and Install
 -----------------
 
+### 1. Install dependencies
+
+Pada distro lama (Ubuntu ≤ 20.04, Mint ≤ 20):
 ```shell
 sudo apt-get install libappindicator3-dev libgtk-3-dev
+```
+
+Pada **distro terbaru** (Ubuntu 22.04+, Pop!_OS 22.04+, Debian 12, COSMIC),
+`libappindicator` sudah diganti dengan **`ayatana-appindicator`**. Install paket
+ini sebagai gantinya:
+```shell
+sudo apt-get install libayatana-appindicator3-dev libgtk-3-dev pkg-config
+```
+
+Karena source code original (warisan dari upstream) masih `#include` header
+`libappindicator/app-indicator.h` dan Makefile memanggil
+`pkg-config appindicator3-0.1`, Anda perlu **membuat symlink kompatibilitas**
+supaya bisa compile tanpa ubah source:
+
+```shell
+# 1. Cek pkg-config ayatana ada (harusnya keluar path .pc-nya)
+find / -name "ayatana-appindicator3*.pc" 2>/dev/null
+#    -> /usr/lib/x86_64-linux-gnu/pkgconfig/ayatana-appindicator3-0.1.pc
+
+# 2. Cek header app-indicator.h
+find / -name "app-indicator.h" 2>/dev/null
+#    -> /usr/include/libayatana-appindicator3-0.1/libayatana-appindicator/app-indicator.h
+
+# 3. Buat symlink pkg-config (supaya `pkg-config appindicator3-0.1` jalan)
+sudo ln -sf /usr/lib/x86_64-linux-gnu/pkgconfig/ayatana-appindicator3-0.1.pc \
+            /usr/lib/x86_64-linux-gnu/pkgconfig/appindicator3-0.1.pc
+
+# 4. Buat symlink header (supaya #include <libappindicator/app-indicator.h> lulus)
+sudo mkdir -p /usr/include/libappindicator
+sudo ln -sf /usr/include/libayatana-appindicator3-0.1/libayatana-appindicator/app-indicator.h \
+            /usr/include/libappindicator/app-indicator.h
+```
+
+Verifikasi symlink sudah benar:
+```shell
+pkg-config --cflags --libs appindicator3-0.1
+#    harusnya keluar flag -I... dan -layatana-appindicator3 ...
+```
+
+> **Catatan:** symlink ini aman — ayatana-appindicator adalah fork yang
+> API-compatible dengan libappindicator, jadi binary hasil compile akan link ke
+> libayatana tapi `#include` dan nama fungsi sama persis.
+
+### 2. Build & install
+
+```shell
 cd clevo-indicator-dual
 make
 sudo make install    # installs /usr/local/bin/clevo-indicator-dual with setuid
