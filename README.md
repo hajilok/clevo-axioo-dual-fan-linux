@@ -1,14 +1,36 @@
-Clevo Dual Fan Control Indicator for Ubuntu
-===========================================
+Clevo / Axioo Dual Fan Control Indicator for Linux
+==================================================
+
+> Linux fan-control indicator for **Clevo-based laptops** and their Indonesian
+> rebrands (e.g. **Axioo Pongo 725**). Fixes the common problem where only the
+> **CPU fan spins** and the **GPU fan stays off**.
 
 Fork of [clevo-indicator](https://github.com/SkyLandTW/clevo-indicator) by
 AqD, modified to control **BOTH fans** (CPU + GPU) on dual-fan Clevo laptops.
 
+Tested on **Axioo Pongo 725** (Clevo NH5xR barebone — Intel i7-12650H +
+NVIDIA RTX 2050). Both fans confirmed spinning (CPU ~6200 RPM, GPU ~5600 RPM).
+
 The original `clevo-indicator` only ever issues the EC command `0x99 0x01`
 which spins up the **CPU fan only**. On dual-fan models (P7xxDM, N1xxED,
-NH5x_7x, ND, NE series, Schenker/XMG/Tuxedo rebrands, etc.) the second fan
-(GPU) never spins up under manual/auto control — see upstream
+NH5x_7x, ND, NE series, Axioo Pongo, Schenker/XMG/Tuxedo rebrands, etc.) the
+second fan (GPU) never spins up under manual/auto control — see upstream
 [issue #27](https://github.com/SkyLandTW/clevo-indicator/issues/27).
+
+---
+
+## Daftar Isi (untuk pengguna Indonesia)
+- [Kenapa fan GPU saya tidak nyala?](#kenapa-fan-gpu-tidak-nyala)
+- [Cara install](#build-and-install)
+- [Cara pakai](#command-line-usage)
+- [Bikin persistent (jalan terus / autostart)](#autostart-dengan-systemd)
+- [Troubleshooting](#troubleshooting)
+
+## Kenapa fan GPU tidak nyala?
+Banyak laptop Clevo (termasuk Axioo Pongo, Schenker, XMG, Tuxedo) punya algoritma
+bawaan EC yang rusak: fan GPU baru nyala kalau GPU sudah sangat panas. Karena GPU
+modern (RTX 20/30/40) jarang panas, fan GPU jadi idle terus → laptop overheating
+tanpa Anda sadari. Tool ini memaksa **kedua fan** ikut perintah yang sama.
 
 This fork additionally issues `0x99 0x02` (the GPU-fan index) so **both fans**
 respond. It also reads the GPU fan RPM from EC registers `0xD2/0xD3` so you
@@ -77,6 +99,54 @@ clevo-indicator-dual 70 2
 ```
 
 Valid duty range is **40–100** (percent). Below ~40% most Clevo fans stall.
+
+Autostart dengan systemd
+------------------------
+Supaya indicator tetap muncul walau terminal di-close, dan auto-start saat
+login, pakai systemd user service:
+
+```bash
+mkdir -p ~/.config/systemd/user
+
+# Buat file ~/.config/systemd/user/clevo-indicator-dual.service
+cat > ~/.config/systemd/user/clevo-indicator-dual.service <<'EOF'
+[Unit]
+Description=Clevo Dual Fan Control Indicator
+After=graphical-session.target
+PartOf=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/clevo-indicator-dual
+Restart=on-failure
+RestartSec=3
+Environment=DISPLAY=:1
+Environment=WAYLAND_DISPLAY=wayland-1
+Environment=XDG_RUNTIME_DIR=/run/user/%U
+Environment=GDK_BACKEND=wayland,x11
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+[Install]
+WantedBy=default.target
+EOF
+
+systemctl --user daemon-reload
+systemctl --user enable --now clevo-indicator-dual.service
+```
+
+> **Catatan COSMIC/Wayland:** angka `DISPLAY=:1` dan `WAYLAND_DISPLAY=wayland-1`
+> bisa beda tiap sesi. Cek dengan `echo $DISPLAY $WAYLAND_DISPLAY` lalu sesuaikan
+> baris `Environment=` jika perlu.
+
+Kontrol service:
+```bash
+systemctl --user status  clevo-indicator-dual   # cek status
+systemctl --user stop    clevo-indicator-dual   # stop sementara
+systemctl --user start   clevo-indicator-dual   # start lagi
+systemctl --user disable clevo-indicator-dual   # matikan autostart
+journalctl --user -u clevo-indicator-dual -f    # lihat log fan duty auto
+```
 
 Notes
 -----
