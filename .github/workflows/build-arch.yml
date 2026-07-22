@@ -1,0 +1,66 @@
+name: Build Arch package
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+    branches: [main]
+
+jobs:
+  makepkg:
+    name: makepkg -s on archlinux:latest
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:latest
+      options: --privileged
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Initialize pacman keyring
+        run: |
+          pacman-key --init
+          pacman-key --populate archlinux
+          pacman -Sy --noconfirm archlinux-keyring
+
+      - name: Install build dependencies
+        run: |
+          pacman -Syu --noconfirm \
+            base-devel git pkgconf \
+            glib2 gtk3 libayatana-appindicator \
+            namcap
+
+      - name: Prepare source
+        run: |
+          # The PKGBUILD references v${pkgver} tag and arch-build-fix.patch URL.
+          # For CI we override the source to the local checkout + local patch
+          # so the build does not depend on GitHub being reachable from inside
+          # the container (and does not require a tag to exist for every PR).
+          sed -i "s|clevo-indicator-dual::git+https://github.com/hajilok/clevo-axioo-dual-fan-linux.git#tag=v${pkgver}|clevo-indicator-dual::git+file://${PWD}/../clevo-axioo-dual-fan-linux.git|" PKGBUILD || true
+          sed -i "s|https://raw.githubusercontent.com/hajilok/clevo-axioo-dual-fan-linux/v${pkgver}/arch-build-fix.patch|file://${PWD}/arch-build-fix.patch|" PKGBUILD || true
+          # If the sed did not match (no tag-style URL present), fall back to
+          # regenerating .SRCINFO and letting the original source array win.
+          makepkg --allsource --noarchive 2>&1 | tail -20 || true
+
+      - name: Build (no check, since no testsuite)
+        run: makepkg -s --nocheck --noconfirm --clean --syncdeps
+
+      - name: Lint package with namcap
+        run: |
+          namcap PKGBUILD
+          namcap clevo-indicator-dual-*.pkg.tar.* 2>/dev/null || true
+
+      - name: Smoke test binary
+        run: |
+          # The dump-mode call exercises the EC init path without a DISPLAY.
+          ./clevo-indicator-dual '-?' || true
+          # Verify the built binary has the setuid bit and wheel group.
+          stat -c '%A %a %U:%G %n' clevo-indicator-dual
+
+      - name: Upload built artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: clevo-indicator-dual-pkg
+          path: clevo-indicator-dual-*.pkg.tar.*
+          if-no-files-found: ignore

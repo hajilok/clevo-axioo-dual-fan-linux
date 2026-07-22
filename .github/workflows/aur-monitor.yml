@@ -1,0 +1,55 @@
+name: AUR monitor
+
+on:
+  schedule:
+    # Run daily at 09:13 UTC (off-peak). Adjust as needed.
+    - cron: "13 9 * * *"
+  workflow_dispatch:
+
+jobs:
+  check-aur:
+    name: Check AUR package page & comments
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch AUR pkgbase page
+        id: page
+        run: |
+          # AUR returns the package page when it exists, "Not Found" otherwise.
+          STATUS=$(curl -s -o /tmp/aur.html -w "%{http_code}" \
+            "https://aur.archlinux.org/pkgbase/clevo-indicator-dual")
+          echo "http_status=$STATUS" >> "$GITHUB_OUTPUT"
+          if [ "$STATUS" = "200" ]; then
+            echo "aur_page=ok" >> "$GITHUB_OUTPUT"
+          else
+            echo "aur_page=missing" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Detect out-of-date flag
+        id: ood
+        run: |
+          if grep -qi "Out-of-date.*flag" /tmp/aur.html; then
+            echo "out_of_date=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "out_of_date=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Detect maintainer change
+        run: |
+          # If someone else became maintainer, we lost write access — alert.
+          if grep -q "hajilok" /tmp/aur.html; then
+            echo "::notice::AUR maintainer is still hajilok"
+          else
+            echo "::warning::AUR maintainer is no longer hajilok!"
+          fi
+
+      - name: Open issue if out-of-date
+        if: steps.ood.outputs.out_of_date == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: 'AUR package flagged out-of-date',
+              body: 'The AUR package https://aur.archlinux.org/pkgbase/clevo-indicator-dual has been flagged out-of-date. Please review and update.'
+            });
