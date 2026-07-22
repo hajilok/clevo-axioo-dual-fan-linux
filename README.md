@@ -14,6 +14,9 @@ NVIDIA RTX 2050). Both fans confirmed spinning (CPU ~6200 RPM, GPU ~5600 RPM).
 Tested on Arch-based: **CachyOS Linux** (KDE Plasma 6 Wayland, kernel 7.x)
 — both fans read correctly via EC, icon visible in system tray.
 
+Also published to the **Arch User Repository**: https://aur.archlinux.org/pkgbase/clevo-indicator-dual
+Install with `paru -S clevo-indicator-dual` / `yay -S clevo-indicator-dual`.
+
 The original `clevo-indicator` only ever issues the EC command `0x99 0x01`
 which spins up the **CPU fan only**. On dual-fan models (P7xxDM, N1xxED,
 NH5x_7x, ND, NE series, Axioo Pongo, Schenker/XMG/Tuxedo rebrands, etc.) the
@@ -185,6 +188,19 @@ Tested pada:
 * **CachyOS Linux** (rolling, kernel 7.x, KDE Plasma 6 Wayland) — CPU
   fan terbaca ~2632 RPM, GPU fan ~2548 RPM; icon visible di system tray
   dengan status `NeedsAttention`.
+
+### AUR package & CI
+
+Package ini **live di AUR** dengan nama `clevo-indicator-dual`:
+
+* Halaman AUR: https://aur.archlinux.org/pkgbase/clevo-indicator-dual
+* Git source: `https://aur.archlinux.org/clevo-indicator-dual.git`
+  (over SSH: `ssh://aur@aur.archlinux.org/clevo-indicator-dual.git`)
+* Maintainer: [hajilok](https://github.com/hajilok)
+* Dipantau via GitHub Actions — tiap push ke `main` atau tag `v*`,
+  workflow `.github/workflows/build-arch.yml` menjalankan `makepkg -s`
+  di kontainer `archlinux:latest` + lint dengan `namcap` + smoke test
+  binary. Lihat tab **Actions** di GitHub untuk hasil build.
 
 Command-line usage
 ------------------
