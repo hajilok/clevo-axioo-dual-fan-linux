@@ -139,8 +139,10 @@ Distribusi Arch-family mengirim `libayatana-appindicator` (bukan legacy
 menyediakan **PKGBUILD siap-pakai** yang:
 
 * menarik source via tag git `v1.0.0`
-* otomatis apply `patches/arch-build-fix.patch` (ayatana API macro +
-  Breeze icons — lihat header patch untuk detail)
+* otomatis apply `arch-build-fix.patch` (ayatana API macro + Breeze
+  icons — lihat header patch untuk detail). File patch berada di root
+  repo, bukan di `patches/`, karena AUR pre-receive hook menolak
+  subdirektori.
 * install binary ke `/usr/bin/clevo-indicator-dual` (Arch convention,
   BUKAN `/usr/local/bin` seperti Makefile upstream) dengan setuid root
 * group ownership `wheel` (admin group default Arch/CachyOS)
