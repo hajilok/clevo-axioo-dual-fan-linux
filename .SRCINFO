@@ -14,7 +14,7 @@ pkgbase = clevo-indicator-dual
 	depends = libayatana-appindicator
 	optdepends = breeze-icons: provides the tray icons (temperature-warm/normal/cold)
 	source = clevo-indicator-dual::git+https://github.com/hajilok/clevo-axioo-dual-fan-linux.git#tag=v1.0.0
-	source = https://raw.githubusercontent.com/hajilok/clevo-axioo-dual-fan-linux/v1.0.0/patches/arch-build-fix.patch
+	source = https://raw.githubusercontent.com/hajilok/clevo-axioo-dual-fan-linux/v1.0.0/arch-build-fix.patch
 	sha256sums = SKIP
 	sha256sums = SKIP
 

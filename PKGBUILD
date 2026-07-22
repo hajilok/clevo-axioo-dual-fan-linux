@@ -22,7 +22,7 @@ optdepends=(
 install=clevo-indicator-dual.install
 source=(
     "${pkgname}::git+${url}.git#tag=v${pkgver}"
-    "https://raw.githubusercontent.com/hajilok/clevo-axioo-dual-fan-linux/v${pkgver}/patches/arch-build-fix.patch"
+    "https://raw.githubusercontent.com/hajilok/clevo-axioo-dual-fan-linux/v${pkgver}/arch-build-fix.patch"
 )
 sha256sums=('SKIP'
             'SKIP')
