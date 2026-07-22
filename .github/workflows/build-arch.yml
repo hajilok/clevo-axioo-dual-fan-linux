@@ -45,7 +45,11 @@ jobs:
           makepkg --allsource --noarchive 2>&1 | tail -20 || true
 
       - name: Build (no check, since no testsuite)
-        run: makepkg -s --nocheck --noconfirm --clean --syncdeps
+        run: |
+          # makepkg refuses to run as root — create a build user and use su.
+          useradd -m builder
+          chown -R builder:builder .
+          su builder -c "makepkg -s --nocheck --noconfirm --clean --syncdeps"
 
       - name: Lint package with namcap
         run: |
