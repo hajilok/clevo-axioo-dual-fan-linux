@@ -11,6 +11,9 @@ AqD, modified to control **BOTH fans** (CPU + GPU) on dual-fan Clevo laptops.
 Tested on **Axioo Pongo 725** (Clevo NH5xR barebone — Intel i7-12650H +
 NVIDIA RTX 2050). Both fans confirmed spinning (CPU ~6200 RPM, GPU ~5600 RPM).
 
+Tested on Arch-based: **CachyOS Linux** (KDE Plasma 6 Wayland, kernel 7.x)
+— both fans read correctly via EC, icon visible in system tray.
+
 The original `clevo-indicator` only ever issues the EC command `0x99 0x01`
 which spins up the **CPU fan only**. On dual-fan models (P7xxDM, N1xxED,
 NH5x_7x, ND, NE series, Axioo Pongo, Schenker/XMG/Tuxedo rebrands, etc.) the
@@ -21,7 +24,8 @@ second fan (GPU) never spins up under manual/auto control — see upstream
 
 ## Daftar Isi (untuk pengguna Indonesia)
 - [Kenapa fan GPU saya tidak nyala?](#kenapa-fan-gpu-tidak-nyala)
-- [Cara install](#build-and-install) ← termasuk symlink ayatana-appindicator untuk distro baru
+- [Cara install di Debian/Ubuntu](#build-and-install) ← termasuk symlink ayatana-appindicator untuk distro baru
+- [Cara install di Arch / CachyOS / Manjaro](#install-pada-arch-based-cachyos-manjaro-arch)
 - [Cara pakai](#command-line-usage)
 - [Bikin persistent (jalan terus / autostart)](#autostart-dengan-systemd)
 - [Troubleshooting](#troubleshooting)
@@ -126,6 +130,59 @@ make
 sudo chown root bin/clevo-indicator-dual
 sudo chmod u+s   bin/clevo-indicator-dual
 ```
+
+Install pada Arch-based (CachyOS / Manjaro / Arch)
+--------------------------------------------------
+
+Distribusi Arch-family mengirim `libayatana-appindicator` (bukan legacy
+`libappindicator`) dan tidak punya paket `brasero` default-nya. Repo ini
+menyediakan **PKGBUILD siap-pakai** yang:
+
+* menarik source via tag git `v1.0.0`
+* otomatis apply `patches/arch-build-fix.patch` (ayatana API macro +
+  Breeze icons — lihat header patch untuk detail)
+* install binary ke `/usr/bin/clevo-indicator-dual` (Arch convention,
+  BUKAN `/usr/local/bin` seperti Makefile upstream) dengan setuid root
+* group ownership `wheel` (admin group default Arch/CachyOS)
+
+### Install via AUR helper (`paru` / `yay`)
+
+```bash
+# setelah paket tersedia di AUR
+paru -S clevo-indicator-dual
+```
+
+### Install manual dari repo ini
+
+```bash
+git clone https://github.com/hajilok/clevo-axioo-dual-fan-linux.git
+cd clevo-axioo-dual-fan-linux
+git checkout v1.0.0
+makepkg -si    # -s sync deps, -i install setelah build sukses
+```
+
+`makepkg` otomatis menarik `base-devel`, `git`, `pkgconf`, `gtk3`,
+`libayatana-appindicator` dari repo Arch. Patch ter-apply di phase
+`prepare()`. Binary terinstall di `/usr/bin/clevo-indicator-dual`.
+
+> **Catatan CachyOS:** user harus anggota group `wheel` agar bisa exec
+> binary setuid. `wheel` adalah admin group default di Arch/CachyOS,
+> paralel dengan `sudo`/`adm` di Debian/Ubuntu. Cek dengan `id $(whoami)`.
+
+### Verifikasi
+
+```bash
+# binary harusnya: -rwsr-x--- root:wheel
+ls -l /usr/bin/clevo-indicator-dual
+
+# dump mode — harusnya bisa baca EC tanpa GUI
+clevo-indicator-dual '-?'
+```
+
+Tested pada:
+* **CachyOS Linux** (rolling, kernel 7.x, KDE Plasma 6 Wayland) — CPU
+  fan terbaca ~2632 RPM, GPU fan ~2548 RPM; icon visible di system tray
+  dengan status `NeedsAttention`.
 
 Command-line usage
 ------------------
