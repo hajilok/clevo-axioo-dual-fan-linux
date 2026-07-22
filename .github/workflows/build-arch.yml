@@ -44,6 +44,12 @@ jobs:
           install -d /usr/include/libappindicator
           ln -sf /usr/include/libayatana-appindicator3-0.1/libayatana-appindicator/app-indicator.h \
                   /usr/include/libappindicator/app-indicator.h
+          # app-indicator.h does #include "app-indicator-version.h" (local include,
+          # resolved from the same directory). Ayatana ships it under a different
+          # path so symlink it too. This is the same hack we used during the
+          # initial manual install on the user's machine.
+          ln -sf /usr/include/libayatana-appindicator3-0.1/libayatana-appindicator/app-indicator-version.h \
+                  /usr/include/libappindicator/app-indicator-version.h
           # Verify
           pkg-config --cflags --libs appindicator3-0.1 || true
 
