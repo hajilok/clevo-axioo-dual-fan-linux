@@ -31,17 +31,6 @@ prepare() {
     cd "${pkgname}"
     # Apply fix for Ayatana API + Breeze icon names — see patch header for details
     patch -p1 -i "${srcdir}/arch-build-fix.patch"
-
-    # Compat symlinks: upstream Makefile calls `pkg-config appindicator3-0.1`
-    # and the source #includes <libappindicator/app-indicator.h>. Modern
-    # Arch ships libayatana-appindicator under a different namespace. These
-    # symlinks make the upstream-style names resolve. Safe — the API is
-    # binary-compatible (see README for verification steps).
-    ln -sf /usr/lib/pkgconfig/ayatana-appindicator3-0.1.pc \
-            /usr/lib/pkgconfig/appindicator3-0.1.pc
-    install -d /usr/include/libappindicator
-    ln -sf /usr/include/libayatana-appindicator3-0.1/libayatana-appindicator/app-indicator.h \
-            /usr/include/libappindicator/app-indicator.h
 }
 
 build() {

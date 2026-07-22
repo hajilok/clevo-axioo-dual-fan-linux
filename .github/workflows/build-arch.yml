@@ -32,6 +32,21 @@ jobs:
             glib2 gtk3 libayatana-appindicator \
             namcap
 
+          # Compat symlinks: the upstream Makefile calls
+          # `pkg-config appindicator3-0.1` and the source #includes
+          # <libappindicator/app-indicator.h>. Modern Arch ships
+          # libayatana-appindicator under a different namespace.
+          # Create symlinks so the legacy names resolve. Done here
+          # (as root) rather than in PKGBUILD prepare() because
+          # prepare() runs as the non-root makepkg user.
+          ln -sf /usr/lib/pkgconfig/ayatana-appindicator3-0.1.pc \
+                  /usr/lib/pkgconfig/appindicator3-0.1.pc
+          install -d /usr/include/libappindicator
+          ln -sf /usr/include/libayatana-appindicator3-0.1/libayatana-appindicator/app-indicator.h \
+                  /usr/include/libappindicator/app-indicator.h
+          # Verify
+          pkg-config --cflags --libs appindicator3-0.1 || true
+
       - name: Prepare source
         run: |
           # The PKGBUILD references v${pkgver} tag and arch-build-fix.patch URL.
